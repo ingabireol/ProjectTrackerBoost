@@ -44,16 +44,21 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
             throw ex;
         } catch (Exception ex) {
             log.error("Error processing OAuth2 user: {}", ex.getMessage(), ex);
-            // Throwing an instance of AuthenticationException will trigger the OAuth2AuthenticationFailureHandler
             throw new InternalAuthenticationServiceException(ex.getMessage(), ex.getCause());
         }
     }
 
     private OAuth2User processOAuth2User(OAuth2UserRequest userRequest, OAuth2User oauth2User) {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
-        AuthProvider provider = getAuthProvider(registrationId);
 
-        // Extract user info based on provider
+        // Only support Google
+        if (!"google".equalsIgnoreCase(registrationId)) {
+            throw new OAuth2AuthenticationException("Unsupported OAuth2 provider: " + registrationId);
+        }
+
+        AuthProvider provider = AuthProvider.GOOGLE;
+
+        // Extract user info
         OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(registrationId, oauth2User.getAttributes());
 
         if (!StringUtils.hasText(userInfo.getEmail())) {
@@ -61,7 +66,7 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException("Email not found from OAuth2 provider");
         }
 
-        // Get or create user (moved the logic here to avoid circular dependency)
+        // Get or create user
         User user = getOrCreateOAuth2User(
                 userInfo.getEmail(),
                 userInfo.getName(),
@@ -75,13 +80,9 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
 
         log.info("OAuth2 user processed successfully: {} from provider: {}", user.getUsername(), provider);
 
-        // Return custom OAuth2User implementation
         return new CustomOAuth2User(user, oauth2User.getAttributes());
     }
 
-    /**
-     * Get or create user for OAuth2 login (duplicated to avoid circular dependency)
-     */
     private User getOrCreateOAuth2User(String email, String name, String providerId, AuthProvider provider) {
         log.info("Processing OAuth2 user: {} from provider: {}", email, provider);
 
@@ -110,9 +111,6 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         return user;
     }
 
-    /**
-     * Create new user from OAuth2 data
-     */
     private User createOAuth2User(String email, String name, String providerId, AuthProvider provider) {
         User user = new User();
 
@@ -135,7 +133,7 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         user.setAccountNonExpired(true);
         user.setAccountNonLocked(true);
         user.setCredentialsNonExpired(true);
-        user.setPassword(passwordEncoder.encode("oauth2-user-" + System.currentTimeMillis())); // Random password
+        user.setPassword(passwordEncoder.encode("oauth2-user-" + System.currentTimeMillis()));
 
         // Assign default role for OAuth2 users (CONTRACTOR)
         Role defaultRole = getOrCreateRole(RoleType.ROLE_CONTRACTOR);
@@ -144,9 +142,6 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         return user;
     }
 
-    /**
-     * Generate unique username
-     */
     private String generateUniqueUsername(String baseUsername) {
         String username = baseUsername;
         int counter = 1;
@@ -159,25 +154,11 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         return username;
     }
 
-    /**
-     * Get or create role
-     */
     private Role getOrCreateRole(RoleType roleType) {
         return roleRepository.findByName(roleType.getRoleName())
                 .orElseGet(() -> {
                     Role role = new Role(roleType.getRoleName(), roleType.getDescription());
                     return roleRepository.save(role);
                 });
-    }
-
-    private AuthProvider getAuthProvider(String registrationId) {
-        return switch (registrationId.toLowerCase()) {
-            case "google" -> AuthProvider.GOOGLE;
-            case "github" -> AuthProvider.GITHUB;
-            default -> {
-                log.error("Unsupported OAuth2 provider: {}", registrationId);
-                throw new OAuth2AuthenticationException("Unsupported OAuth2 provider: " + registrationId);
-            }
-        };
     }
 }

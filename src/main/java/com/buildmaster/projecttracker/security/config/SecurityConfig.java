@@ -71,6 +71,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/health", "/api/info").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
+                        // OAuth2 test endpoints
+                        .requestMatchers("/oauth2-test/**").permitAll()
+
                         // Admin endpoints - ADMIN only
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -113,7 +116,8 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/auth/login")
                         .authorizationEndpoint(authorization -> authorization
-                                .baseUri("/oauth2/authorize"))
+                                .baseUri("/oauth2/authorize")
+                                .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository))
                         .redirectionEndpoint(redirection -> redirection
                                 .baseUri("/oauth2/callback/*"))
                         .userInfoEndpoint(userInfo -> userInfo
