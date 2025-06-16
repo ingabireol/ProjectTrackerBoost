@@ -2,6 +2,7 @@ package com.buildmaster.projecttracker.exception;
 
 import com.mongodb.MongoSocketReadTimeoutException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.data.mongodb.TransientMongoDbException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -109,5 +111,17 @@ public class GlobalExceptionHandler {
                 .path("/")
                 .build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse>  handleResourceNotFound(NoResourceFoundException exception){
+        log.info("Resourse not found for resource provided");
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .error("end point does not exist")
+                .timestamp(LocalDateTime.now())
+                .message(exception.getMessage())
+                .status(HttpStatus.NOT_FOUND.value())
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 }
