@@ -47,6 +47,10 @@ public class JwtService {
         log.debug("Generating refresh token for user: {}", user.getUsername());
         return jwtUtil.generateRefreshToken(user);
     }
+    public String generateToken(User user){
+        log.debug("Generating token for user: {}", user.getUsername());
+        return jwtUtil.generateToken(user);
+    }
     
     /**
      * Validate JWT token
