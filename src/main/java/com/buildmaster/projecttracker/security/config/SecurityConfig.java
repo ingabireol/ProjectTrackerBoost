@@ -16,7 +16,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -38,8 +37,7 @@ public class SecurityConfig {
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
-    private final PasswordEncoder passwordEncoder; // Inject from separate config
-    private final AuthenticationProvider authenticationProvider; // Inject from separate config
+    private final AuthenticationProvider authenticationProvider;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -58,10 +56,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/", "/auth/**", "/login/**", "/error").permitAll()
+
+                        // OAuth2 endpoints - USE SPRING'S DEFAULT PATHS
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()
 
-                        // Swagger and API docs (allow public access for easier testing)
+                        // Swagger and API docs
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/api-docs/**").permitAll()
                         .requestMatchers("/swagger-resources/**").permitAll()
@@ -95,9 +95,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/tasks").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/tasks/**").hasAnyRole("ADMIN", "MANAGER", "DEVELOPER")
                         .requestMatchers(HttpMethod.DELETE, "/api/tasks/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/api/tasks/bulk-**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/api/tasks/**/assign/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/api/tasks/**/unassign").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers("/api/tasks/bulk-*").hasAnyRole("ADMIN", "MANAGER")
+
+                        .requestMatchers("/api/tasks/*/assign/*").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers("/api/tasks/*/unassign").hasAnyRole("ADMIN", "MANAGER")
 
                         // Developer endpoints
                         .requestMatchers(HttpMethod.GET, "/api/developers/**").authenticated()
@@ -112,16 +113,18 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // Configure OAuth2 Login
+                // Configure OAuth2 Login - USE SPRING'S DEFAULTS
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/auth/login")
-                        .authorizationEndpoint(authorization -> authorization
-                                .baseUri("/oauth2/authorize")
-                                .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository))
-                        .redirectionEndpoint(redirection -> redirection
-                                .baseUri("/oauth2/callback/*"))
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(oAuth2UserService))
+                        // REMOVE CUSTOM AUTHORIZATION ENDPOINT - Use Spring's default
+//                         .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorize"))
+
+                        // REMOVE CUSTOM REDIRECTION ENDPOINT - Use Spring's default
+                        // .redirectionEndpoint(redirection -> redirection.baseUri("/oauth2/callback/*"))
+
+
+//                        .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository)
+                        .userInfoEndpoint(userInfo -> userInfo.userService(oAuth2UserService))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler(oAuth2AuthenticationFailureHandler)
                 )

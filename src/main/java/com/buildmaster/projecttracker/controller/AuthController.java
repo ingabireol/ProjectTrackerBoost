@@ -107,39 +107,39 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/oauth2/success")
-    @Operation(summary = "OAuth2 success callback", description = "Handle successful OAuth2 authentication")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "OAuth2 authentication successful",
-                    content = @Content(schema = @Schema(implementation = JwtResponseDto.class))),
-            @ApiResponse(responseCode = "500", description = "OAuth2 authentication processing failed")
-    })
-    public ResponseEntity<JwtResponseDto> oauth2Success(
-            @AuthenticationPrincipal OAuth2User oauth2User,
-            HttpServletResponse response) throws IOException {
-
-        log.info("OAuth2 authentication success for user: {}", oauth2User.getName());
-
-        try {
-            // Get the custom OAuth2User that contains our User entity
-            CustomOAuth2User customUser = (CustomOAuth2User) oauth2User;
-
-            // Generate JWT for the OAuth2 user
-            JwtResponseDto jwtResponse = jwtService.generateJwtResponse(customUser.getUser());
-
-            log.info("JWT generated for OAuth2 user: {}", customUser.getUser().getUsername());
-            return ResponseEntity.ok(jwtResponse);
-
-        } catch (Exception e) {
-            log.error("Error processing OAuth2 success: {}", e.getMessage(), e);
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "OAuth2 Authentication Failed");
-            errorResponse.put("message", e.getMessage());
-
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Authentication failed");
-            return null;
-        }
-    }
+//    @GetMapping("/oauth2/success")
+//    @Operation(summary = "OAuth2 success callback", description = "Handle successful OAuth2 authentication")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "OAuth2 authentication successful",
+//                    content = @Content(schema = @Schema(implementation = JwtResponseDto.class))),
+//            @ApiResponse(responseCode = "500", description = "OAuth2 authentication processing failed")
+//    })
+//    public ResponseEntity<JwtResponseDto> oauth2Success(
+//            @AuthenticationPrincipal OAuth2User oauth2User,
+//            HttpServletResponse response) throws IOException {
+//
+////        log.info("OAuth2 authentication success for user: {}", oauth2User.getName());
+//
+//        try {
+//            // Get the custom OAuth2User that contains our User entity
+//            CustomOAuth2User customUser = (CustomOAuth2User) oauth2User;
+//
+//            // Generate JWT for the OAuth2 user
+//            JwtResponseDto jwtResponse = jwtService.generateJwtResponse(customUser.getUser());
+//
+//            log.info("JWT generated for OAuth2 user: {}", customUser.getUser().getUsername());
+//            return ResponseEntity.ok(jwtResponse);
+//
+//        } catch (Exception e) {
+//            log.error("Error processing OAuth2 success: {}", e.getMessage(), e);
+//            Map<String, String> errorResponse = new HashMap<>();
+//            errorResponse.put("error", "OAuth2 Authentication Failed");
+//            errorResponse.put("message", e.getMessage());
+//
+//            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Authentication failed");
+//            return null;
+//        }
+//    }
 
     @GetMapping("/oauth2/error")
     @Operation(summary = "OAuth2 error callback", description = "Handle OAuth2 authentication errors")
