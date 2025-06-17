@@ -48,8 +48,11 @@ public class JwtService {
         return jwtUtil.generateRefreshToken(user);
     }
     public String generateToken(User user){
-        log.debug("Generating token for user: {}", user.getUsername());
-        return jwtUtil.generateToken(user);
+        String token = jwtUtil.generateToken(user);
+        log.debug("Generating token for user: {}, token: {}", user.getUsername(),token);
+
+        log.debug(token);
+        return token;
     }
     
     /**

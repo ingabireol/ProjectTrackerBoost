@@ -16,6 +16,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -36,8 +38,12 @@ public class SecurityConfig {
     private final OAuth2UserService oAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
-    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
+//    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
     private final AuthenticationProvider authenticationProvider;
+    @Bean
+    public AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository() {
+        return new HttpCookieOAuth2AuthorizationRequestRepository();
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -118,10 +124,9 @@ public class SecurityConfig {
                         .loginPage("/auth/login")
                         // REMOVE CUSTOM AUTHORIZATION ENDPOINT - Use Spring's default
 //                         .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorize"))
-
+//                                .authorizationEndpoint(authorizationEndpointConfig -> authorizationEndpointConfig.authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository))
                         // REMOVE CUSTOM REDIRECTION ENDPOINT - Use Spring's default
                         // .redirectionEndpoint(redirection -> redirection.baseUri("/oauth2/callback/*"))
-
 
 //                        .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository)
                         .userInfoEndpoint(userInfo -> userInfo.userService(oAuth2UserService))

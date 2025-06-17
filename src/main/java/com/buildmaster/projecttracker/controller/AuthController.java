@@ -202,6 +202,12 @@ public class AuthController {
     public ResponseEntity<UserResponseDto> getCurrentUser(
             @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
 
+        // Handle case where userDetails might be null
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(null);
+        }
+
         User user = (User) userDetails;
 
         UserResponseDto userResponse = new UserResponseDto();
@@ -221,7 +227,6 @@ public class AuthController {
 
         return ResponseEntity.ok(userResponse);
     }
-
     @GetMapping("/login")
     @Operation(summary = "Login page", description = "Display login page with OAuth2 options")
     public ResponseEntity<Map<String, Object>> loginPage() {
