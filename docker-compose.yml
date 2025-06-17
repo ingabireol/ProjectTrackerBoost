@@ -1,0 +1,112 @@
+services:
+  # Spring Boot Application
+  app:
+    build: .
+    container_name: project-trackerlog
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - POSTGRES_DB=${POSTGRES_DB:-projectTrackerDb}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-078868}
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE:-projecttracker_audit}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-1800000}
+      - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION:-86400000}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@projecttracker.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CACHE_TYPE=${CACHE_TYPE:-simple}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - project-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-projectTrackerDb}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-078868}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-projectTrackerDb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - project-network
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE:-projecttracker_audit}
+    volumes:
+      - mongodb-data:/data/db
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - project-network
+
+  # Database administration tools (optional - can be removed in production)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@projecttracker.com}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin123}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - postgres
+    networks:
+      - project-network
+    profiles:
+      - admin-tools
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_BASICAUTH_USERNAME=${ME_CONFIG_BASICAUTH_USERNAME:-admin}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${ME_CONFIG_BASICAUTH_PASSWORD:-admin123}
+    ports:
+      - "${MONGO_EXPRESS_PORT:-8081}:8081"
+    depends_on:
+      - mongodb
+    networks:
+      - project-network
+    profiles:
+      - admin-tools
+
+networks:
+  project-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+  mongodb-data:
+    driver: local
