@@ -125,39 +125,44 @@ public class TaskServiceImpl implements TaskService {
         
         log.info("Task deleted successfully with ID: {}", taskId);
     }
-    
+
     @Override
     @Cacheable(value = "tasks", key = "#taskId")
     public TaskResponseDto getTaskById(Long taskId) {
-        log.debug("Fetching task with ID: {}", taskId);
+        log.debug("Fetching task with ID: {} (cache miss)", taskId);
         Task task = findTaskById(taskId);
         return convertToResponseDto(task);
     }
-    
+
+
     @Override
+    @Cacheable(value = "tasks", key = "'all_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<TaskResponseDto> getAllTasks(Pageable pageable) {
-        log.debug("Fetching all tasks with pagination");
+        log.debug("Fetching all tasks with pagination (cache miss)");
         Page<Task> tasks = taskRepository.findAll(pageable);
         return tasks.map(this::convertToResponseDto);
     }
-    
+
     @Override
+    @Cacheable(value = "tasks", key = "'project_' + #projectId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<TaskResponseDto> getTasksByProject(Long projectId, Pageable pageable) {
-        log.debug("Fetching tasks by project ID: {}", projectId);
+        log.debug("Fetching tasks by project ID: {} (cache miss)", projectId);
         Page<Task> tasks = taskRepository.findByProjectId(projectId, pageable);
         return tasks.map(this::convertToResponseDto);
     }
-    
+
     @Override
+    @Cacheable(value = "tasks", key = "'developer_' + #developerId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<TaskResponseDto> getTasksByDeveloper(Long developerId, Pageable pageable) {
-        log.debug("Fetching tasks by developer ID: {}", developerId);
+        log.debug("Fetching tasks by developer ID: {} (cache miss)", developerId);
         Page<Task> tasks = taskRepository.findByAssignedDeveloperId(developerId, pageable);
         return tasks.map(this::convertToResponseDto);
     }
-    
+
     @Override
+    @Cacheable(value = "tasks", key = "'status_' + #status + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<TaskResponseDto> getTasksByStatus(TaskStatus status, Pageable pageable) {
-        log.debug("Fetching tasks by status: {}", status);
+        log.debug("Fetching tasks by status: {} (cache miss)", status);
         Page<Task> tasks = taskRepository.findByStatus(status, pageable);
         return tasks.map(this::convertToResponseDto);
     }

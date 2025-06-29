@@ -11,6 +11,7 @@ import com.buildmaster.projecttracker.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -59,6 +60,7 @@ public class ProjectServiceImpl implements ProjectService {
     
     @Override
     @CacheEvict(value = "projects", key = "#projectId")
+    @CachePut(value = "projects", key = "#projectId")
     public ProjectResponseDto updateProject(Long projectId, ProjectRequestDto projectRequestDto, String actorName) {
         log.info("Updating project with ID: {}", projectId);
         
